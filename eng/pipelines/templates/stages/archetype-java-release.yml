@@ -155,8 +155,9 @@ stages:
               displayName: "Publish Updates for Docs.MS"
               condition: and(succeeded(), ne(variables['Skip.PublishDocs'], 'true'))
               environment: github
-              dependsOn: PublishPackage
+              #dependsOn: PublishPackage
               variables:
+                CIConfigs: "{'targets':[{'path_to_config':'packages.json','mode':'Preview','monikerid':'1'},{'path_to_config':'packages.json','mode':'Latest','monikerid':'0'}]}"
                 - template: ../variables/globals.yml
               pool:
                 vmImage: vs2017-win2016
@@ -170,6 +171,10 @@ stages:
                           SourceFolder: ${{parameters.ArtifactName}}-signed
                           TargetFolder: ${{artifact.safeName}}
                           PackageName: ${{artifact.name}}
+                      - template: /eng/common/pipelines/templates/steps/get-pr-owners.yml
+                        parameters:
+                          TargetVariable: "OwningGHUser"
+                          ServiceDirectory: ${{parameters.ServiceDirectory}}
                       - template: /eng/common/pipelines/templates/steps/docs-metadata-release.yml
                         parameters:
                           ArtifactLocation: $(Pipeline.Workspace)/${{artifact.safeName}}
@@ -179,10 +184,12 @@ stages:
                           WorkingDirectory: $(System.DefaultWorkingDirectory)
                           TargetDocRepoOwner: ${{parameters.TargetDocRepoOwner}}
                           TargetDocRepoName: ${{parameters.TargetDocRepoName}}
-                          PRBranchName: 'smoke-test-rdme'
-                          ArtifactName: ${{parameters.ArtifactName}}
+                          PRBranchName: onboarding-${{artifact.name}}-$(Build.BuildId)
+                          ArtifactName: ${{artifact.name}}
                           Language: 'java'
                           DocRepoDestinationPath: 'docs-ref-services/'
+                          GHReviewersVariable: 'OwningGHUser'
+                          CIConfigs: $(CIConfigs)
 
           - ${{if ne(artifact.options.skipPublishDocs, 'true')}}:
             - deployment: PublishDocs
