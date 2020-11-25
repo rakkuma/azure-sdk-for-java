@@ -28,7 +28,7 @@ public final class ItemBulkOperation<TInternal> implements CosmosItemOperation {
     private final CosmosItemOperationType operationType;
     private final RequestOptions requestOptions;
     private String partitionKeyJson;
-    private BulkOperationRetryPolicy bulkOperationRetryPolicy;
+    private BulkOperationContext bulkOperationContext;
 
     public ItemBulkOperation(
         CosmosItemOperationType operationType,
@@ -129,11 +129,11 @@ public final class ItemBulkOperation<TInternal> implements CosmosItemOperation {
         partitionKeyJson = value;
     }
 
-    BulkOperationRetryPolicy getRetryPolicy() {
-        return bulkOperationRetryPolicy;
+    BulkOperationContext getBulkContext() {
+        return bulkOperationContext;
     }
 
-    void setRetryPolicy(BulkOperationRetryPolicy bulkOperationRetryPolicy) {
-        this.bulkOperationRetryPolicy = bulkOperationRetryPolicy;
+    void setBulkContext(BulkOperationContext bulkOperationContext) {
+        this.bulkOperationContext = bulkOperationContext;
     }
 }

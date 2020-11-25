@@ -240,6 +240,28 @@ class ClientSideRequestStatistics {
         }
     }
 
+    void mergeClientSideRequestStatistics(ClientSideRequestStatistics clientSideRequestStatisticsOther) {
+
+        // Assignment
+        this.connectionMode = clientSideRequestStatisticsOther.connectionMode;
+        this.requestEndTimeUTC = clientSideRequestStatisticsOther.requestEndTimeUTC;
+        this.retryContext = clientSideRequestStatisticsOther.retryContext;
+        this.gatewayStatistics = clientSideRequestStatisticsOther.gatewayStatistics;
+        this.transportRequestTimeline = clientSideRequestStatisticsOther.transportRequestTimeline;
+
+        // Merging
+        this.responseStatisticsList.addAll(clientSideRequestStatisticsOther.responseStatisticsList);
+        this.supplementalResponseStatisticsList.addAll(clientSideRequestStatisticsOther.supplementalResponseStatisticsList);
+        this.addressResolutionStatistics.putAll(clientSideRequestStatisticsOther.addressResolutionStatistics);
+
+        this.contactedReplicas.addAll(clientSideRequestStatisticsOther.contactedReplicas);
+        this.failedReplicas.addAll(clientSideRequestStatisticsOther.failedReplicas);
+        this.regionsContacted.addAll(clientSideRequestStatisticsOther.regionsContacted);
+
+        this.metadataDiagnosticsContext.mergeMetadataDiagnosticsContext(clientSideRequestStatisticsOther.metadataDiagnosticsContext);
+        this.serializationDiagnosticsContext.mergeSerializationDiagnosticsContext(clientSideRequestStatisticsOther.serializationDiagnosticsContext);
+    }
+
     static class StoreResponseStatistics {
         @JsonSerialize(using = StoreResult.StoreResultSerializer.class)
         StoreResult storeResult;

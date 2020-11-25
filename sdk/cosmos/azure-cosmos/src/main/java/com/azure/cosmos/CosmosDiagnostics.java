@@ -23,10 +23,12 @@ public final class CosmosDiagnostics {
 
     private ClientSideRequestStatistics clientSideRequestStatistics;
     private FeedResponseDiagnostics feedResponseDiagnostics;
+    private DiagnosticsClientContext diagnosticsClientContext;
 
     static final String USER_AGENT = Utils.getUserAgent();
 
     CosmosDiagnostics(DiagnosticsClientContext diagnosticsClientContext) {
+        this.diagnosticsClientContext = diagnosticsClientContext;
         this.clientSideRequestStatistics = new ClientSideRequestStatistics(diagnosticsClientContext);
     }
 
@@ -89,5 +91,13 @@ public final class CosmosDiagnostics {
 
     FeedResponseDiagnostics getFeedResponseDiagnostics() {
         return feedResponseDiagnostics;
+    }
+
+    CosmosDiagnostics cloneCosmosDiagnostics() {
+        CosmosDiagnostics cosmosDiagnostics = new CosmosDiagnostics(this.diagnosticsClientContext);
+        cosmosDiagnostics.clientSideRequestStatistics.mergeClientSideRequestStatistics(
+            this.clientSideRequestStatistics);
+
+        return cosmosDiagnostics;
     }
 }

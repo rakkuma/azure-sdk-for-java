@@ -101,7 +101,10 @@ public class CosmosBulkItemResponseTest {
         assertThat(batchResponse.getResults().get(0).getOperation()).isEqualTo(operation);
 
         // Validate cosmos item response fields
-        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(batchResponse.getResults().get(0), batchResponse);
+        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(
+            batchResponse.getResults().get(0),
+            batchResponse,
+            null);
 
         // Common properties which are in TransactionalBatchOperationResult
         assertThat(cosmosBulkItemResponse.getETag()).isEqualTo(operation.getId());
@@ -179,7 +182,10 @@ public class CosmosBulkItemResponseTest {
         assertThat(batchResponse.getResults().get(0).getOperation()).isEqualTo(operation);
 
         // Validate cosmos item response fields
-        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(batchResponse.getResults().get(0), batchResponse);
+        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(
+            batchResponse.getResults().get(0),
+            batchResponse,
+            null);
 
         // Common properties which are in TransactionalBatchOperationResult
         assertThat(cosmosBulkItemResponse.getETag()).isNull();

@@ -26,6 +26,19 @@ public class MetadataDiagnosticsContext {
         metadataDiagnosticList.add(metaDataDiagnostic);
     }
 
+    public void mergeMetadataDiagnosticsContext(MetadataDiagnosticsContext metadataDiagnosticsContext) {
+
+        if (metadataDiagnosticsContext == null || metadataDiagnosticsContext.metadataDiagnosticList == null) {
+            return;
+        }
+
+        if (this.metadataDiagnosticList == null) {
+            this.metadataDiagnosticList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        this.metadataDiagnosticList.addAll(metadataDiagnosticsContext.metadataDiagnosticList);
+    }
+
     @JsonSerialize(using = MetaDataDiagnosticSerializer.class)
     public static class MetadataDiagnostics {
         public volatile Instant startTimeUTC;

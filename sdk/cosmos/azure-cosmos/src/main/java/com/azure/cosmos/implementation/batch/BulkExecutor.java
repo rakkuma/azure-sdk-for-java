@@ -9,6 +9,7 @@ import com.azure.cosmos.CosmosAsyncContainer;
 import com.azure.cosmos.CosmosBridgeInternal;
 import com.azure.cosmos.CosmosBulkItemResponse;
 import com.azure.cosmos.CosmosBulkOperationResponse;
+import com.azure.cosmos.CosmosDiagnostics;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.CosmosItemOperation;
 import com.azure.cosmos.ThrottlingRetryOptions;
@@ -115,8 +116,9 @@ public final class BulkExecutor<TContext> {
             })
             .doOnNext((CosmosItemOperation cosmosItemOperation) -> {
 
-                // Set the retry policy before starting execution. Should only happens once.
-                BulkExecutorUtil.setRetryPolicyForBulk(
+                // Set the context which contains retry policies, intermediate diagnostic etc before starting execution.
+                // Should only happen once.
+                BulkExecutorUtil.setBulkContext(
                     docClientWrapper,
                     this.container,
                     cosmosItemOperation,
@@ -224,27 +226,33 @@ public final class BulkExecutor<TContext> {
         TransactionalBatchOperationResult operationResult,
         FluxSink<CosmosItemOperation> groupSink) {
 
-        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(operationResult, response);
         CosmosItemOperation itemOperation = operationResult.getOperation();
+
+        if (!(itemOperation instanceof ItemBulkOperation<?>)) {
+            throw new UnsupportedOperationException("Unknown CosmosItemOperation.");
+        }
+
+        ItemBulkOperation<?> itemBulkOperation = (ItemBulkOperation<?>) itemOperation;
+        CosmosDiagnostics itemCosmosDiagnostic =
+            BulkExecutorUtil.getAndUpdateItemCosmosDiagnostic(itemBulkOperation, response.getDiagnostics());
+
+        CosmosBulkItemResponse cosmosBulkItemResponse = BridgeInternal.createCosmosBulkItemResponse(
+            operationResult,
+            response,
+            itemCosmosDiagnostic);
 
         if (!operationResult.isSuccessStatusCode()) {
 
-            if (itemOperation instanceof ItemBulkOperation<?>) {
-
-                return ((ItemBulkOperation<?>) itemOperation).getRetryPolicy().shouldRetry(operationResult).flatMap(
-                    result -> {
-                        if (result.shouldRetry) {
-                            groupSink.next(itemOperation);
-                            return Mono.empty();
-                        } else {
-                            return Mono.just(BridgeInternal.createCosmosBulkOperationResponse(
-                                itemOperation, cosmosBulkItemResponse, this.batchContext));
-                        }
-                    });
-
-            } else {
-                throw new UnsupportedOperationException("Unknown CosmosItemOperation.");
-            }
+            return itemBulkOperation.getBulkContext().getRetryPolicy().shouldRetry(operationResult).flatMap(
+                result -> {
+                    if (result.shouldRetry) {
+                        groupSink.next(itemOperation);
+                        return Mono.empty();
+                    } else {
+                        return Mono.just(BridgeInternal.createCosmosBulkOperationResponse(
+                            itemOperation, cosmosBulkItemResponse, this.batchContext));
+                    }
+                });
         }
 
         return Mono.just(BridgeInternal.createCosmosBulkOperationResponse(
@@ -262,17 +270,19 @@ public final class BulkExecutor<TContext> {
             CosmosException cosmosException = (CosmosException) exception;
             ItemBulkOperation<?> itemBulkOperation = (ItemBulkOperation<?>) itemOperation;
 
+            BulkExecutorUtil.getAndUpdateItemCosmosDiagnostic(itemBulkOperation, cosmosException.getDiagnostics());
+
             // First check if it failed due to split, so the operations need to go in a different pk range group. So
             // add it in the mainSink.
             if (cosmosException.getStatusCode() == HttpResponseStatus.GONE.code() &&
-                itemBulkOperation.getRetryPolicy().shouldRetryForGone(
+                itemBulkOperation.getBulkContext().getRetryPolicy().shouldRetryForGone(
                     cosmosException.getStatusCode(),
                     cosmosException.getSubStatusCode())) {
 
                 mainSink.next(itemOperation);
                 return Mono.empty();
             } else {
-                return itemBulkOperation.getRetryPolicy().shouldRetry(cosmosException).flatMap(result -> {
+                return itemBulkOperation.getBulkContext().getRetryPolicy().shouldRetry(cosmosException).flatMap(result -> {
                     if (result.shouldRetry) {
 
                         groupSink.next(itemOperation);

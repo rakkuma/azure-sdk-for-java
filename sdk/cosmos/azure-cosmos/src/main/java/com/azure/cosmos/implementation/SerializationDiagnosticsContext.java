@@ -26,6 +26,19 @@ public class SerializationDiagnosticsContext {
         serializationDiagnosticsList.add(serializationDiagnostics);
     }
 
+    public void mergeSerializationDiagnosticsContext(SerializationDiagnosticsContext serializationDiagnosticsContext) {
+
+        if (serializationDiagnosticsContext == null || serializationDiagnosticsContext.serializationDiagnosticsList == null) {
+            return;
+        }
+
+        if (serializationDiagnosticsList == null) {
+            serializationDiagnosticsList = Collections.synchronizedList(new ArrayList<>());
+        }
+
+        serializationDiagnosticsList.addAll(serializationDiagnosticsContext.serializationDiagnosticsList);
+    }
+
     @JsonSerialize(using = SerializationDiagnosticsContext.SerializationDiagnosticsSerializer.class)
     public static class SerializationDiagnostics {
         public volatile Instant startTimeUTC;

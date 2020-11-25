@@ -664,7 +664,8 @@ public final class BridgeInternal {
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static CosmosBulkItemResponse createCosmosBulkItemResponse(
         TransactionalBatchOperationResult result,
-        TransactionalBatchResponse response) {
+        TransactionalBatchResponse response,
+        CosmosDiagnostics cosmosDiagnostics) {
 
         return new CosmosBulkItemResponse(
             result.getETag(),
@@ -674,7 +675,7 @@ public final class BridgeInternal {
             result.getRetryAfterDuration(),
             result.getSubStatusCode(),
             response.getResponseHeaders(),
-            response.getDiagnostics());
+            cosmosDiagnostics);
     }
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
@@ -723,5 +724,20 @@ public final class BridgeInternal {
         List<TransactionalBatchOperationResult> transactionalBatchOperationResults) {
 
         transactionalBatchResponse.addAll(transactionalBatchOperationResults);
+    }
+
+    @Warning(value = INTERNAL_USE_ONLY_WARNING)
+    public static CosmosDiagnostics cloneCosmosDiagnostics(CosmosDiagnostics cosmosDiagnostics) {
+        return cosmosDiagnostics.cloneCosmosDiagnostics();
+    }
+
+    @Warning(value = INTERNAL_USE_ONLY_WARNING)
+    public static void mergeCosmosDiagnostics(
+        CosmosDiagnostics cosmosDiagnosticsOriginal,
+        CosmosDiagnostics cosmosDiagnosticsOther) {
+
+        cosmosDiagnosticsOriginal.clientSideRequestStatistics().mergeClientSideRequestStatistics(
+            cosmosDiagnosticsOther.clientSideRequestStatistics()
+        );
     }
 }

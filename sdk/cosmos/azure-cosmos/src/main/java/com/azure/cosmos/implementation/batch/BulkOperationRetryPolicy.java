@@ -28,17 +28,20 @@ final class BulkOperationRetryPolicy extends RetryPolicyWithDiagnostics {
     private final String collectionLink;
     private final ResourceThrottleRetryPolicy resourceThrottleRetryPolicy;
     private int attemptedRetries;
+    private BulkOperationContext bulkOperationContext;
 
     BulkOperationRetryPolicy(
         RxCollectionCache collectionCache,
         String resourceFullName,
-        ResourceThrottleRetryPolicy resourceThrottleRetryPolicy) {
+        ResourceThrottleRetryPolicy resourceThrottleRetryPolicy,
+        BulkOperationContext bulkOperationContext) {
 
         this.collectionCache = collectionCache;
 
         // Similar to PartitionKeyMismatchRetryPolicy constructor.
         collectionLink = Utils.getCollectionName(resourceFullName);
         this.resourceThrottleRetryPolicy = resourceThrottleRetryPolicy;
+        this.bulkOperationContext = bulkOperationContext;
     }
 
     final Mono<ShouldRetryResult> shouldRetry(final TransactionalBatchOperationResult result) {
@@ -90,14 +93,9 @@ final class BulkOperationRetryPolicy extends RetryPolicyWithDiagnostics {
         return false;
     }
 
-    /**
-     * TODO(rakkuma): metaDataDiagnosticContext is passed null in collectionCache.refresh function. Fix it while adding
-     *  support for an operation wise Diagnostic. The value here should be merged in the individual diagnostic.
-     * Issue: https://github.com/Azure/azure-sdk-for-java/issues/17647
-     */
     private void refreshCollectionCache() {
         this.collectionCache.refresh(
-            null,
+            bulkOperationContext.getMetadataDiagnosticsContext(),
             this.collectionLink,
             null);
     }
